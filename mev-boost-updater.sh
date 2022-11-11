@@ -86,7 +86,12 @@ if [ "$MEV_LOC" == "" ]; then
         exit 0
 fi
 MEV_VERSION=$($MEV_LOC --version)
-MEV_SERVICE=$(systemctl --type=service | grep mev | head -1|  awk '$1=$1' | awk -F ' ' '{print $1}')
+MEV_SERVICE=$(systemctl --type=service | sed 's/|/ /' | awk '{print $1}' | grep "^mev" | head -1|  awk '$1=$1' | awk -F ' ' '{print $1}')
+# Ensure MEV-Boost service is found
+if [ "$MEV_SERVICE" == "" ]; then
+        echo "[!] Can't find MEV-Boost service..."
+        exit 0
+fi
 MEV_OWNER=$(stat -c '%U' $MEV_LOC)
 
 # Show information on MEV-Boost
