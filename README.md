@@ -39,7 +39,7 @@ You can install MEV-Boost-Updater to any location you wish. It is recommended to
 To install MEV-Boost-Updater please enter the following commands:
 
 ```
-wget https://raw.githubusercontent.com/jordanhillis/mev-boost-updater/main/mev-boost-updater.sh
+wget -O mev-boost-updater.sh https://raw.githubusercontent.com/jordanhillis/mev-boost-updater/main/mev-boost-updater.sh
 chmod +x mev-boost-updater.sh
 ./mev-boost-updater.sh
 ```
