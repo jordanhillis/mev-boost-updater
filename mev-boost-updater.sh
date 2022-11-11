@@ -79,7 +79,7 @@ if [ "$list_to_install" != "" ]; then
 fi
 
 # Set MEV-Boost location, version, service name, and owner
-MEV_LOC=$(ps -x | grep -v "[m]ev-boost-updater" | grep "/[m]ev" | head -1|  awk '$1=$1' | awk -F ' ' '{print $5}')
+MEV_LOC=$(ps -fe | grep -v "[m]ev-boost-updater" | grep "/[m]ev" | head -1|  awk '$1=$1' | awk -F ' ' '{print $8}')
 # Ensure MEV-Boost location is found
 if [ "$MEV_LOC" == "" ]; then
         echo "[!] Can't find MEV-Boost file location..."
