@@ -1,8 +1,9 @@
 # MEV-Boost-Updater
-Easily update MEV-Boost from Flashbots
 
 [![Version](https://img.shields.io/badge/Version-v1.0-green)](https://github.com/jordanhillis/mev-boost-updater)
 [![License: MIT](https://img.shields.io/badge/license-GPL-green)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+
+Easily build and update MEV-Boost from Flashbots
 
 ## What is MEV-Boost-Updater?
 
