@@ -85,7 +85,7 @@ if [ "$MEV_LOC" == "" ]; then
         echo "[!] Can't find MEV-Boost file location..."
         exit 0
 fi
-MEV_VERSION=$($MEV_LOC --version)
+MEV_VERSION=$($MEV_LOC --version | sed "s/mev-boost//g" | sed "s/ //g")
 MEV_SERVICE=$(systemctl --type=service | sed 's/|/ /' | awk '{print $1}' | grep "^mev" | head -1|  awk '$1=$1' | awk -F ' ' '{print $1}')
 # Ensure MEV-Boost service is found
 if [ "$MEV_SERVICE" == "" ]; then
@@ -111,7 +111,7 @@ git clone https://github.com/flashbots/mev-boost.git > /dev/null 2>&1
 cd mev-boost
 echo -e "[-] Building MEV-Boost...\n"
 make build > /dev/null 2>&1
-MEV_VERSION_NEW=$(/tmp/mev-boost/mev-boost --version)
+MEV_VERSION_NEW=$(/tmp/mev-boost/mev-boost --version | sed "s/mev-boost//g" | sed "s/ //g")
 sleep 3
 
 # Compare current and build versions
@@ -133,7 +133,7 @@ else
         sudo chmod +x $MEV_LOC
         sudo chown $MEV_OWNER:$MEV_OWNER $MEV_LOC
         sudo systemctl start $MEV_SERVICE
-        echo "[+] MEV-Boost updated: "$($MEV_LOC --version)
+        echo "[+] MEV-Boost updated: "$($MEV_LOC --version | sed "s/mev-boost//g" | sed "s/ //g")
         echo "[-] Press CTRL+C to exit or ENTER to view the MEV-Boost logs"
         read
         sudo journalctl -fu $MEV_SERVICE
