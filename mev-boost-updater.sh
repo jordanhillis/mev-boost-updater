@@ -1,0 +1,115 @@
+#!/bin/bash
+: '
+________________________________________________________________________
+                        MEV-Boost Updater
+                        By Jordan Hillis
+                        jordan@hillis.email
+                        https://jordanhillis.com
+________________________________________________________________________
+  MEV-Boost Updater
+  Copyright (C) 2022, Jordan Hillis
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+________________________________________________________________________
+'
+
+VERSION="1.0"
+
+echo -e "
+  __  __ _______     __    ____                  _   
+ |  \/  | ____\ \   / /   | __ )  ___   ___  ___| |_ 
+ | |\/| |  _|  \ \ / /____|  _ \ / _ \ / _ \/ __| __|
+ | |  | | |___  \ V /_____| |_) | (_) | (_) \__ \ |_ 
+ |_|  |_|_____|  \_/      |____/ \___/ \___/|___/\__|
+  _   _           _       _                          
+ | | | |_ __   __| | __ _| |_ ___ _ __               
+ | | | | '_ \ / _\` |/ _\` | __/ _ \ '__|              
+ | |_| | |_) | (_| | (_| | ||  __/ |                 
+  \___/| .__/ \__,_|\__,_|\__\___|_|       ⎦˚◡˚⎣ v$VERSION             
+       |_|                                           
+_______________________________________________________
+
+"
+
+# Ensure Sudo works
+SUDO_WORKS=$(sudo whoami)
+if [ "$SUDO_WORKS" != "root" ]; then
+        echo "[!] Sudo is required for the process to continue...$SUDO_WORKS"
+        exit 0
+fi
+
+# Ensure Golang is installed for building
+if [ "$(dpkg-query -W --showformat='${db:Status-Status}' golang 2>&1)" != "installed" ]; then
+        echo "[!] Golang package missing!"
+        echo "[-] Press ENTER to install the package or CTRL+C to quit"
+        read
+        sudo apt -y install golang > /dev/null 2>&1
+        echo "[-] Installed Golang for building MEV-Boost"
+fi
+
+# Set MEV-Boost location, version, service name, and owner
+MEV_LOC=$(ps -x | grep -v "[m]ev-boost-updater" | grep "/[m]ev" | head -1|  awk '$1=$1' | awk -F ' ' '{print $5}')
+# Ensure MEV-Boost location is found
+if [ "$MEV_LOC" == "" ]; then
+        echo "[!] Can't find MEV-Boost file location..."
+        exit 0
+fi
+MEV_VERSION=$($MEV_LOC --version)
+MEV_SERVICE=$(systemctl --type=service | grep mev | head -1|  awk '$1=$1' | awk -F ' ' '{print $1}')
+MEV_OWNER=$(stat -c '%U' $MEV_LOC)
+
+# Show information on MEV-Boost
+echo "[-] Current MEV-Boost Info:"
+echo "      - Location: $MEV_LOC"
+echo "      - Version:  $MEV_VERSION"
+echo "      - Service:  $MEV_SERVICE"
+echo "      - Owner:    $MEV_OWNER"
+echo -e "\n[-] Press ENTER to continue or CTRL+C to quit"
+read
+
+# Build MEV-Boost
+rm -rf /tmp/mev-boost > /dev/null 2>&1
+cd /tmp
+echo "[-] Grabbing latest MEV-Boost source code..."
+git clone https://github.com/flashbots/mev-boost.git > /dev/null 2>&1
+cd mev-boost
+echo -e "[-] Building MEV-Boost...\n"
+make build > /dev/null 2>&1
+MEV_VERSION_NEW=$(/tmp/mev-boost/mev-boost --version)
+sleep 3
+
+# Compare current and build versions
+echo "-------------------------------------------------"       
+echo "[-] Current version:    $MEV_VERSION"
+echo "[-] New build version:  $MEV_VERSION_NEW"
+echo -e "-------------------------------------------------\n"
+sleep 3
+
+# Current version doesn't need to be updated
+if [ "$MEV_VERSION" = "$MEV_VERSION_NEW" ]; then
+        echo "[!] Versions are the same. No need to update."
+# Update MEV-Boost process
+else
+        echo "[-] Updating MEV-Boost to version $MEV_VERSION_NEW..."
+        sudo systemctl stop $MEV_SERVICE
+        sudo rm $MEV_LOC
+        sudo cp /tmp/mev-boost/mev-boost $MEV_LOC
+        sudo chmod +x $MEV_LOC
+        sudo chown $MEV_OWNER:$MEV_OWNER $MEV_LOC
+        sudo systemctl start $MEV_SERVICE
+        echo "[+] MEV-Boost updated: "$($MEV_LOC --version)
+        echo "[-] Press CTRL+C to exit or ENTER to view the MEV-Boost logs"
+        read
+        sudo journalctl -fu $MEV_SERVICE
+fi
