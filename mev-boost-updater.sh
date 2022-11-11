@@ -49,13 +49,33 @@ if [ "$SUDO_WORKS" != "root" ]; then
         exit 0
 fi
 
-# Ensure Golang is installed for building
-if [ "$(dpkg-query -W --showformat='${db:Status-Status}' golang 2>&1)" != "installed" ]; then
-        echo "[!] Golang package missing!"
-        echo "[-] Press ENTER to install the package or CTRL+C to quit"
-        read
-        sudo apt -y install golang > /dev/null 2>&1
-        echo "[-] Installed Golang for building MEV-Boost"
+# Required programs needed
+required_programs="wget golang git"
+# List of programs that will be asked to install
+list_to_install=""
+# Check if each is installed
+for i in $required_programs
+do
+        # Check if it is install via dpkg
+        if [ $(dpkg-query -W -f='${Status}' $i 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
+                printf "[!] Required program \"$i\" was not found on your system\n"
+                # Add to the list
+                list_to_install+="$i "
+        fi
+done
+# Check if the list isn't empty
+if [ "$list_to_install" != "" ]; then
+        # Ask the user if they want to install the listed program above
+        read -p "[*] Would you like to install these [y/N] " -n 1 -r
+        printf "\n"
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+                # Install via apt, assume yes for install
+                echo -n "[+] Installing programs..."
+                sudo apt install -y $list_to_install > /dev/null 2>&1
+                echo -e "Done!\n"
+        else
+                exit 0
+        fi
 fi
 
 # Set MEV-Boost location, version, service name, and owner
